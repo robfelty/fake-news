@@ -52,8 +52,9 @@ dev_writer = csv.writer(dev_file, delimiter=',', dialect='unix', quotechar='"',)
 test_file = open('test.csv', 'w', newline='', encoding='utf-8')
 test_writer = csv.writer(test_file, delimiter=',', dialect='unix', quotechar='"',)
 test_writer.writerow(['Headline', 'Body ID', 'Stance'])
+sample = 10
 for body_id in ids:
-    #print(body_id)
+    #if body_id > sample: continue # uncomment to just make a really small sample
     for stance in stances[body_id]:
         if body_id < train_num:
             write_example(train_writer, body_id, bodies, stance)
