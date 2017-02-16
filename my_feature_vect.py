@@ -79,6 +79,7 @@ class StanceVectorizer(BaseEstimator, VectorizerMixin):
 
     def fit_transform(self, raw_documents, y=None):
         """Learn the vocabulary dictionary and return term-document matrix.
+        Each document is a tuple of headline,body
         This is equivalent to fit followed by transform, but more efficiently
         implemented.
         Parameters
@@ -122,16 +123,18 @@ class StanceVectorizer(BaseEstimator, VectorizerMixin):
         if self.binary:
             X.data.fill(1)
         return X
+
     def _extract_features(self,raw_documents):
         j_indices = []
         indptr = _make_int_array()
         values = _make_int_array()
         indptr.append(0)
-        featureset = set()
+        vocabulary = defaultdict(int)
         for doc in raw_documents:
             feature_counter = {}
-            for feature,feature_idx in enumerate(contains_keywords(doc)):
-                featureset.add(feature)
+            #for feature,feature_idx in contains_keywords(doc).items():
+            for feature,feature_idx in self.body_words_in_headline(doc).items():
+                vocabulary[feature]+=1
                 try:
                     if feature_idx not in feature_counter:
                         feature_counter[feature_idx] = 1
@@ -151,10 +154,33 @@ class StanceVectorizer(BaseEstimator, VectorizerMixin):
         values = frombuffer_empty(values, dtype=np.intc)
 
         X = sp.csr_matrix((values, j_indices, indptr),
-                          shape=(len(indptr) - 1, len(featureset)),
+                          shape=(len(indptr) - 1, len(vocabulary)),
                           dtype=self.dtype)
         X.sort_indices()
-        return featureset, X
+        return vocabulary, X
+
+    def get_feature_names(self):
+        """Array mapping from feature integer indices to feature name"""
+        self._check_vocabulary()
+
+        return [t for t, i in sorted(six.iteritems(self.vocabulary_),
+                                     key=itemgetter(1))]
+
+    def body_words_in_headline(self,doc):
+        """ For each word in the headline, create a feature. The value of the
+        feature will be the number of times that word appears in the body"""
+        features = defaultdict(int)
+        analyze = self.build_analyzer()
+        headline_tokens=analyze(doc[0])
+        body_tokens=analyze(doc[1])
+        #headline_token_counts=defaultdict(int)
+        body_token_counts=defaultdict(int)
+        for token in body_tokens:
+            body_token_counts[token]+=1
+        for token in headline_tokens:
+            if token in body_token_counts:
+                features[token] +=1
+        return features
 
 class CountVectorizer(BaseEstimator, VectorizerMixin):
     """Convert a collection of text documents to a matrix of token counts
@@ -541,11 +567,12 @@ def _make_int_array():
 
 
 def contains_keywords(doc):
-    features=[]
+    features={}
     keywords = set(['good', 'bad', 'ugly'])
     for keyword in keywords:
         if keyword in doc:
-            features.append(1)
+            features[keyword] = 1
         else:
-            features.append(0)
+            features[keyword] = 0
     return features
+

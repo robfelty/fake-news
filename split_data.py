@@ -41,7 +41,7 @@ random.shuffle(ids)
 def write_example(writer, body_id, bodies, stance):
     writer.writerow([body_id, stance[0], stance[1], bodies[body_id]])
 def write_test(writer, body_id, bodies, stance):
-    writer.writerow([body_id, stance[0], stance[1]])
+    writer.writerow([stance[0], body_id, stance[1]])
 
 train_num = math.floor(train_percent * total_num)
 dev_num = math.floor(dev_percent * total_num)+train_num
@@ -61,4 +61,4 @@ for body_id in ids:
         elif body_id < dev_num:
             write_example(dev_writer, body_id, bodies, stance)
         else:
-            write_test(test_writer, body_id, bodies, stance)
+            write_example(test_writer, body_id, bodies, stance)
