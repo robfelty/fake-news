@@ -35,6 +35,7 @@ categories = ['agree', 'disagree', 'discuss', 'unrelated']
 with open('dev.csv', newline='',encoding='utf-8') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='"')
     for row in reader:
-        prediction = categories[count_clf.predict(tuple([row[1],row[3]]))[0]]
+        #prediction = categories[count_clf.predict(tuple([row[1],row[3]]))[0]]
+        prediction = categories[count_clf.predict(tuple([row[1]+row[3]]))[0]]
         predicted_writer.writerow([row[1], row[0], prediction])
         truth_writer.writerow([row[1], row[0], row[2]])
